@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alocação de Salas - POLI UPE</title>
+    <style>
+        :root {
+            --primary-color: #003366; /* Azul remetendo ao padrão institucional */
+            --secondary-color: #00509e;
+            --background: #f4f7f6;
+            --text-color: #333;
+            --success: #28a745;
+            --danger: #dc3545;
+            --card-bg: #fff;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--background);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        header {
+            background-color: var(--primary-color);
+            color: white;
+            width: 100%;
+            padding: 1rem;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .screen {
+            display: none;
+            background: var(--card-bg);
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        h2 {
+            margin-bottom: 1.5rem;
+            color: var(--primary-color);
+            text-align: center;
+        }
+
+        /* Botões */
+        .btn-group {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 1rem;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+
+        .btn-primary { background-color: var(--primary-color); color: white; }
+        .btn-primary:hover { background-color: var(--secondary-color); }
+        .btn-success { background-color: var(--success); color: white; }
+        .btn-danger { background-color: var(--danger); color: white; }
+        .btn-outline { background-color: transparent; border: 2px solid var(--primary-color); color: var(--primary-color); }
+        .btn-outline:hover { background-color: var(--primary-color); color: white; }
+
+        /* Formulários */
+        .form-group {
+            margin-bottom: 1rem;
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        input, select {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+
+        .checkbox-group {
+            flex-direction: row;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .checkbox-group input {
+            width: 20px;
+            height: 20px;
+        }
+
+        /* Admin Dashboard */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+
+        @media (max-width: 600px) {
+            .dashboard-grid { grid-template-columns: 1fr; }
+        }
+
+        .card {
+            border: 1px solid #ddd;
+            padding: 1rem;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+            background: #fafafa;
+        }
+
+        .card h4 { margin-bottom: 0.5rem; color: var(--primary-color); }
+        .card p { margin-bottom: 0.25rem; font-size: 0.9rem; }
+        
+        .actions {
+            margin-top: 1rem;
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>POLI UPE - Sistema de Alocação de Salas</h1>
+    </header>
+
+    <div class="container">
+        <div id="main-screen" class="screen active">
+            <h2>Bem-vindo! Selecione o seu perfil:</h2>
+            <div class="btn-group">
+                <button class="btn-primary" onclick="switchScreen('student-screen')">Sou Aluno</button>
+                <button class="btn-outline" onclick="switchScreen('admin-screen'); renderAdminDashboard();">Sou Admin</button>
+            </div>
+        </div>
+
+        <div id="student-screen" class="screen">
+            <div class="top-bar">
+                <h2>Solicitar Sala</h2>
+                <button class="btn-outline" onclick="switchScreen('main-screen')">Voltar</button>
+            </div>
+            
+            <form id="allocation-form" onsubmit="submitRequest(event)">
+                <div class="form-group">
+                    <label for="student-name">Nome Completo</label>
+                    <input type="text" id="student-name" required placeholder="Ex: Jamerson D. A. Queiroz">
+                </div>
+                
+                <div class="form-group">
+                    <label for="student-course">Curso</label>
+                    <input type="text" id="student-course" required placeholder="Ex: Engenharia de Controle e Automação">
+                </div>
+
+                <div class="form-group">
+                    <label for="building-select">Prédio</label>
+                    <select id="building-select" required onchange="populateRooms()">
+                        <option value="">Selecione o prédio...</option>
+                        <option value="Prédio A">Prédio A</option>
+                        <option value="Prédio B">Prédio B</option>
+                        <option value="Prédio C">Prédio C</option>
+                        <option value="Prédio D">Prédio D</option>
+                        <option value="Prédio E">Prédio E</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="room-select">Sala</label>
+                    <select id="room-select" required disabled>
+                        <option value="">Selecione primeiro o prédio...</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="date-select">Data</label>
+                    <input type="date" id="date-select" required>
+                </div>
+
+                <div style="display: flex; gap: 1rem;">
+                    <div class="form-group" style="flex: 1;">
+                        <label for="time-start">Hora Início</label>
+                        <input type="time" id="time-start" required>
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label for="time-end">Hora Fim</label>
+                        <input type="time" id="time-end" required>
+                    </div>
+                </div>
+
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="is-recurrent">
+                    <label for="is-recurrent" style="margin: 0;">Reserva Recorrente (Semanal)</label>
+                </div>
+
+                <button type="submit" class="btn-primary" style="width: 100%;">Enviar Solicitação</button>
+            </form>
+        </div>
+
+        <div id="admin-screen" class="screen">
+            <div class="top-bar">
+                <h2>Painel do Administrador</h2>
+                <button class="btn-outline" onclick="switchScreen('main-screen')">Sair</button>
+            </div>
+
+            <div class="dashboard-grid">
+                <div>
+                    <h3>Solicitações Pendentes</h3>
+                    <hr style="margin: 10px 0;">
+                    <div id="pending-requests-container">
+                        </div>
+                </div>
+
+                <div>
+                    <h3>Salas Alocadas (Visão Geral)</h3>
+                    <hr style="margin: 10px 0;">
+                    <div id="allocated-rooms-container">
+                        </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Banco de dados simulado na memória
+        let requests = [];
+        let currentId = 1;
+
+        // Função para alternar entre as telas
+        function switchScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(screen => {
+                screen.classList.remove('active');
+            });
+            document.getElementById(screenId).classList.add('active');
+        }
+
+        // Preenche o select de salas (1 a 10) quando um prédio é escolhido
+        function populateRooms() {
+            const building = document.getElementById('building-select').value;
+            const roomSelect = document.getElementById('room-select');
+            
+            roomSelect.innerHTML = '<option value="">Selecione a sala...</option>';
+            
+            if (building) {
+                roomSelect.disabled = false;
+                for (let i = 1; i <= 10; i++) {
+                    const option = document.createElement('option');
+                    option.value = `Sala ${i}`;
+                    option.textContent = `Sala ${i}`;
+                    roomSelect.appendChild(option);
+                }
+            } else {
+                roomSelect.disabled = true;
+            }
+        }
+
+        // Lida com o envio do formulário do aluno
+        function submitRequest(event) {
+            event.preventDefault();
+
+            const newRequest = {
+                id: currentId++,
+                name: document.getElementById('student-name').value,
+                course: document.getElementById('student-course').value,
+                building: document.getElementById('building-select').value,
+                room: document.getElementById('room-select').value,
+                date: document.getElementById('date-select').value,
+                timeStart: document.getElementById('time-start').value,
+                timeEnd: document.getElementById('time-end').value,
+                isRecurrent: document.getElementById('is-recurrent').checked,
+                status: 'pending' // pode ser 'pending', 'approved', 'rejected'
+            };
+
+            requests.push(newRequest);
+            
+            alert('Solicitação enviada com sucesso! Aguarde a aprovação da administração.');
+            document.getElementById('allocation-form').reset();
+            document.getElementById('room-select').disabled = true;
+            switchScreen('main-screen');
+        }
+
+        // Atualiza as listas no painel do administrador
+        function renderAdminDashboard() {
+            const pendingContainer = document.getElementById('pending-requests-container');
+            const allocatedContainer = document.getElementById('allocated-rooms-container');
+            
+            pendingContainer.innerHTML = '';
+            allocatedContainer.innerHTML = '';
+
+            const pendingRequests = requests.filter(req => req.status === 'pending');
+            const approvedRequests = requests.filter(req => req.status === 'approved');
+
+            // Renderiza Pendentes
+            if (pendingRequests.length === 0) {
+                pendingContainer.innerHTML = '<p>Nenhuma solicitação pendente no momento.</p>';
+            } else {
+                pendingRequests.forEach(req => {
+                    pendingContainer.innerHTML += createCardHTML(req, true);
+                });
+            }
+
+            // Renderiza Aprovadas (Visão Geral)
+            if (approvedRequests.length === 0) {
+                allocatedContainer.innerHTML = '<p>Nenhuma sala alocada ainda.</p>';
+            } else {
+                approvedRequests.forEach(req => {
+                    allocatedContainer.innerHTML += createCardHTML(req, false);
+                });
+            }
+        }
+
+        // Gera o HTML dos cards de solicitação
+        function createCardHTML(req, isPending) {
+            const recurrenceText = req.isRecurrent ? ' (Recorrente)' : '';
+            let actionButtons = '';
+
+            if (isPending) {
+                actionButtons = `
+                    <div class="actions">
+                        <button class="btn-success" onclick="updateStatus(${req.id}, 'approved')">Aceitar</button>
+                        <button class="btn-danger" onclick="updateStatus(${req.id}, 'rejected')">Recusar</button>
+                    </div>
+                `;
+            }
+
+            return `
+                <div class="card">
+                    <h4>${req.building} - ${req.room}</h4>
+                    <p><strong>Aluno:</strong> ${req.name}</p>
+                    <p><strong>Curso:</strong> ${req.course}</p>
+                    <p><strong>Data:</strong> ${formatDate(req.date)} ${recurrenceText}</p>
+                    <p><strong>Horário:</strong> ${req.timeStart} às ${req.timeEnd}</p>
+                    ${actionButtons}
+                </div>
+            `;
+        }
+
+        // Atualiza o status (Aprovar/Recusar) e re-renderiza o painel
+        function updateStatus(id, newStatus) {
+            const requestIndex = requests.findIndex(req => req.id === id);
+            if (requestIndex !== -1) {
+                requests[requestIndex].status = newStatus;
+                renderAdminDashboard();
+            }
+        }
+
+        // Formata data de YYYY-MM-DD para DD/MM/YYYY
+        function formatDate(dateString) {
+            const [year, month, day] = dateString.split('-');
+            return `${day}/${month}/${year}`;
+        }
+    </script>
+</body>
+</html>
