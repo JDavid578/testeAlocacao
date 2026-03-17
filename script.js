@@ -83,6 +83,14 @@ function atualizarAdmin() {
     }
 }
 
+// Função nova pra transformar hora em número e não bugar com 00:00
+function horaPraMinuto(hora) {
+    let partes = hora.split(':');
+    let min = (parseInt(partes[0]) * 60) + parseInt(partes[1]);
+    if (min == 0) return 1440; // Se for meia noite, é o fim do dia
+    return min;
+}
+
 function mudarEstado(id, novoEstado) {
     let posicao = -1;
     for (let i = 0; i < listaPedidos.length; i++) {
@@ -96,11 +104,18 @@ function mudarEstado(id, novoEstado) {
         let p = listaPedidos[posicao];
         let deuChoque = false;
 
+        let inicioP = horaPraMinuto(p.inicio);
+        let fimP = horaPraMinuto(p.fim);
+
         for (let i = 0; i < listaPedidos.length; i++) {
             let outro = listaPedidos[i];
             
             if (outro.estado == 'aprovada' && outro.predio == p.predio && outro.sala == p.sala && outro.data == p.data) {
-                if (p.inicio < outro.fim && p.fim > outro.inicio) {
+                let inicioOutro = horaPraMinuto(outro.inicio);
+                let fimOutro = horaPraMinuto(outro.fim);
+
+                // Agora comparando números, a matemática bate certo
+                if (inicioP < fimOutro && fimP > inicioOutro) {
                     deuChoque = true;
                     break;
                 }
